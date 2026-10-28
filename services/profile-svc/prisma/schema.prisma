@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  headline         String?
+  bio              String?
+  location         String?
+  education        Json?
+  experience       Json?
+  skills           String[]
+  lookingFor       String[]
+  isPublicFigure   Boolean  @default(false)
+  identityVerified Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([userId])
+  @@index([skills])
+}
+
+model Connection {
+  id          String   @id @default(cuid())
+  requesterId String
+  receiverId  String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, receiverId])
+  @@index([receiverId])
+}
+
+model Company {
+  id                String   @id @default(cuid())
+  name              String
+  domain            String   @unique
+  description       String
+  industry          String
+  ownerId           String
+  ownershipVerified Boolean  @default(false)
+  seekingInvestment Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  services          ServiceOffering[]
+  representatives   AuthorizedRep[]
+
+  @@index([ownerId])
+  @@index([industry])
+}
+
+model ServiceOffering {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  title       String
+  description String
+  minBudget   Decimal?
+  active      Boolean  @default(true)
+}
+
+model AuthorizedRep {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  userId      String
+  role        String
+  addedBy     String
+
+  @@unique([companyId, userId])
+}

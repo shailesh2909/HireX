@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  authorId    String
+  content     String
+  isSponsored Boolean   @default(false)
+  promotionId String?
+  createdAt   DateTime  @default(now())
+  likes       Like[]
+  comments    PostComment[]
+
+  @@index([authorId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Like {
+  id      String @id @default(cuid())
+  postId  String
+  userId  String
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  text      String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}

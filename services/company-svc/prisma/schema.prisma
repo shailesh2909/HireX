@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model CompanyRecord {
+  id                String   @id @default(cuid())
+  userId            String   // References the user ID from identity-svc
+  companyNumber     String   // UK Companies House number
+  legalName         String
+  claimedDomain     String
+  officialDomain    String?  // Caches the AbstractAPI result
+  industry          String?  // Caches the company industry
+  registeredAddress String?  // Caches the official HQ address
+  registryStatus    String   @default("PENDING")
+  verificationLevel Int      @default(0)
+  directorMatch     String?  // Name of the matched director
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("company_verification_records")
+  @@index([userId])
+  @@index([companyNumber])
+  @@index([registryStatus])
+}

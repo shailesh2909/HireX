@@ -1,0 +1,47 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["events"]
+}
+
+model Wallet {
+  userId  String @id
+  balance Float  @default(1000.00)
+
+  @@schema("events")
+}
+
+model Event {
+  id                String   @id @default(cuid())
+  organizerId       String
+  title             String
+  ticketPrice       Float
+  upfrontPayoutRate Float    @default(0.00)
+  status            String   @default("PUBLISHED")
+  escrowBalance     Float    @default(0.00)
+  eventDate         DateTime
+  posterUrl         String?
+  tickets           Ticket[]
+
+  @@schema("events")
+}
+
+model Ticket {
+  id          String    @id @default(cuid())
+  eventId     String
+  userId      String
+  status      String    @default("VALID")
+  pricePaid   Float
+  checkInHash String    @unique
+  scannedAt   DateTime?
+  event       Event     @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, userId])
+  @@schema("events")
+}

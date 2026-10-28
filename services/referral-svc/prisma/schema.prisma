@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ReferralStat {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  referralCount Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@index([referralCount(sort: Desc)])
+}
+
+model MilestoneClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  tier      Int
+  claimedAt DateTime @default(now())
+
+  @@unique([userId, tier])
+}

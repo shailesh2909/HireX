@@ -1,0 +1,107 @@
+version: "3.9"
+
+services:
+
+  # ── Application ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - APP_SECRET_KEY=dev_secret_key_change_in_production_xyz
+      - ENCRYPTION_KEY=dev_encryption_key_change_in_prod
+      - DATABASE_URL=postgresql+asyncpg://ite_user:ite_pass@postgres:5432/identity_trust_engine
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - STORE_RAW_IMAGES=false
+      - DEBUG=true
+    volumes:
+      - ./app:/app/app:ro
+      - ./models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Celery Worker ────────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A app.tasks.verification_tasks.celery_app worker -Q verification -c 2 -l info
+    environment:
+      - APP_ENV=development
+      - APP_SECRET_KEY=dev_secret_key_change_in_production_xyz
+      - ENCRYPTION_KEY=dev_encryption_key_change_in_prod
+      - DATABASE_URL=postgresql+asyncpg://ite_user:ite_pass@postgres:5432/identity_trust_engine
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./models:/app/models
+
+  # ── Celery Flower (monitoring) ────────────────────────────────────────────
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A app.tasks.verification_tasks.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ite_user
+      POSTGRES_PASSWORD: ite_pass
+      POSTGRES_DB: identity_trust_engine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ite_user -d identity_trust_engine"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── Prometheus ────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./scripts/prometheus.yml:/etc/prometheus/prometheus.yml
+
+volumes:
+  postgres_data:

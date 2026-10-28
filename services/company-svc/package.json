@@ -1,0 +1,20 @@
+{
+    "name": "company-svc",
+    "version": "1.0.0",
+    "description": "",
+    "main": "server.js",
+    "type": "module",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "@fastify/cors": "^8.0.0",
+        "@fastify/multipart": "^8.3.1",
+        "@prisma/client": "^5.22.0",
+        "axios": "^1.6.0",
+        "dotenv": "^16.3.1",
+        "fastify": "^4.24.0",
+        "form-data": "^4.0.5",
+        "prisma": "^5.22.0"
+    }
+}

@@ -1,0 +1,113 @@
+version: '3.9'
+
+services:
+  # Node.js service (Prisma owner, Web API proxy)
+  identity-node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - BIOMETRIC_ENGINE_URL=http://biometric-engine:8000
+      - DATABASE_URL=postgresql://ite_user:ite_pass@postgres:5432/identity_trust_engine
+    depends_on:
+      postgres:
+        condition: service_healthy
+      biometric-engine:
+        condition: service_started
+
+  # Python FastAPI Application
+  biometric-engine:
+    build:
+      context: ./biometric_engine
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - ENCRYPTION_KEY=dev_encryption_key_change_in_prod
+      - DATABASE_URL=postgresql+asyncpg://ite_user:ite_pass@postgres:5432/identity_trust_engine
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - STORE_RAW_IMAGES=false
+      - DEBUG=true
+    volumes:
+      - ./biometric_engine/app:/app/app:ro
+      - ./biometric_engine/models:/app/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Celery Worker
+  worker:
+    build:
+      context: ./biometric_engine
+      dockerfile: Dockerfile
+    command: celery -A app.tasks.verification_tasks.celery_app worker -Q verification -c 2 -l info
+    environment:
+      - APP_ENV=development
+      - ENCRYPTION_KEY=dev_encryption_key_change_in_prod
+      - DATABASE_URL=postgresql+asyncpg://ite_user:ite_pass@postgres:5432/identity_trust_engine
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./biometric_engine/models:/app/models
+
+  # Celery Flower (monitoring)
+  flower:
+    build:
+      context: ./biometric_engine
+      dockerfile: Dockerfile
+    command: celery -A app.tasks.verification_tasks.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ite_user
+      POSTGRES_PASSWORD: ite_pass
+      POSTGRES_DB: identity_trust_engine
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ite_user -d identity_trust_engine"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:

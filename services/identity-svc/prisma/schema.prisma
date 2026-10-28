@@ -1,0 +1,266 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model AuthorizedRep {
+  id        String  @id
+  companyId String
+  userId    String
+  role      String
+  addedBy   String
+  Company   Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, userId])
+}
+
+model Company {
+  id                String            @id
+  name              String
+  domain            String            @unique
+  description       String
+  industry          String
+  ownerId           String
+  ownershipVerified Boolean           @default(false)
+  seekingInvestment Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  AuthorizedRep     AuthorizedRep[]
+  ServiceOffering   ServiceOffering[]
+
+  @@index([industry])
+  @@index([ownerId])
+}
+
+
+
+model Like {
+  id        String   @id
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  Post      Post     @relation(fields: [postId], references: [id])
+
+  @@unique([postId, userId])
+}
+
+model Post {
+  id          String        @id
+  authorId    String
+  content     String
+  tags        String[]
+  attachments String[]      @default([])
+  imagesCount Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime
+  Like        Like[]
+  PostComment PostComment[]
+
+  @@index([authorId])
+}
+
+model PostComment {
+  id        String   @id
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  Post      Post     @relation(fields: [postId], references: [id])
+}
+
+model Profile {
+  id               String   @id
+  userId           String   @unique
+  headline         String?
+  bio              String?
+  location         String?
+  education        Json?
+  experience       Json?
+  skills           String[]
+  lookingFor       String[]
+  isPublicFigure   Boolean  @default(false)
+  identityVerified Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime
+
+  @@index([skills])
+  @@index([userId])
+}
+
+model ServiceOffering {
+  id          String   @id
+  companyId   String
+  title       String
+  description String
+  minBudget   Decimal?
+  active      Boolean  @default(true)
+  Company     Company  @relation(fields: [companyId], references: [id])
+}
+
+model company_audit_logs {
+  id                            Int                           @id @default(autoincrement())
+  session_id                    String                        @db.Uuid
+  created_at                    DateTime                      @default(now())
+  stage                         String                        @db.VarChar(64)
+  event                         String                        @db.VarChar(128)
+  confidence                    Float?
+  decision                      String?                       @db.VarChar(32)
+  details                       Json?
+  actor                         String?                       @db.VarChar(64)
+  company_verification_sessions company_verification_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+
+  @@index([created_at])
+  @@index([session_id])
+  @@index([stage])
+}
+
+model company_enrichment_results {
+  id                            String                        @id @default(uuid()) @db.Uuid
+  session_id                    String                        @unique @db.Uuid
+  created_at                    DateTime                      @default(now())
+  official_domain               String?                       @db.VarChar(255)
+  headquarters                  String?                       @db.VarChar(255)
+  domain_match                  Boolean                       @default(false)
+  passed                        Boolean                       @default(false)
+  failure_reason                String?
+  company_verification_sessions company_verification_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+}
+
+model company_ocr_results {
+  id                            String                        @id @default(uuid()) @db.Uuid
+  session_id                    String                        @unique @db.Uuid
+  created_at                    DateTime                      @default(now())
+  encrypted_tax_id              String?
+  tax_id_pattern                String?                       @db.VarChar(64)
+  extracted_name                String?
+  name_match                    Boolean                       @default(false)
+  passed                        Boolean                       @default(false)
+  failure_reason                String?
+  company_verification_sessions company_verification_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+}
+
+model company_records {
+  id                            String                         @id @default(uuid()) @db.Uuid
+  session_id                    String?                        @unique @db.Uuid
+  created_at                    DateTime                       @default(now())
+  updated_at                    DateTime
+  encrypted_tax_id              String                         @unique
+  company_name                  String                         @db.VarChar(255)
+  verification_level            Int                            @default(1)
+  is_active                     Boolean                        @default(true)
+  company_verification_sessions company_verification_sessions? @relation(fields: [session_id], references: [id])
+
+  @@index([encrypted_tax_id])
+  @@index([is_active])
+}
+
+model company_registry_results {
+  id                            String                        @id @default(uuid()) @db.Uuid
+  session_id                    String                        @unique @db.Uuid
+  created_at                    DateTime                      @default(now())
+  registry_used                 String?                       @db.VarChar(64)
+  is_active                     Boolean                       @default(false)
+  company_status                String?                       @db.VarChar(64)
+  passed                        Boolean                       @default(false)
+  failure_reason                String?
+  company_verification_sessions company_verification_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade)
+}
+
+model company_verification_sessions {
+  id                         String                      @id @default(uuid()) @db.Uuid
+  created_at                 DateTime                    @default(now())
+  updated_at                 DateTime
+  status                     String                      @default("pending")
+  verification_level         Int                         @default(0)
+  company_name               String?                     @db.VarChar(255)
+  claimed_domain             String?                     @db.VarChar(255)
+  user_email                 String?                     @db.VarChar(255)
+  user_verified_name         String?                     @db.VarChar(255)
+  stage_scores               Json?
+  failure_stage              String?                     @db.VarChar(64)
+  failure_reason             String?
+  company_audit_logs         company_audit_logs[]
+  company_enrichment_results company_enrichment_results?
+  company_ocr_results        company_ocr_results?
+  company_records            company_records?
+  company_registry_results   company_registry_results?
+
+  @@index([created_at])
+  @@index([status])
+}
+
+model User {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String
+  firstName             String?
+  lastName              String?
+  email                 String   @unique
+  passwordHash          String
+  role                  String   @default("individual")
+  companyName           String?
+  identityVerified      Boolean  @default(false)
+  verificationSessionId String?  @db.VarChar(64)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
+model Job {
+  id          String   @id @default(uuid()) @db.Uuid
+  authorId    String   @db.Uuid
+  title       String
+  company     String
+  location    String
+  tag         String   @default("Hiring")
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([authorId])
+}
+
+model Connection {
+  id          String   @id @default(uuid()) @db.Uuid
+  requesterId String   @db.Uuid
+  receiverId  String   @db.Uuid
+  status      String   @default("ACCEPTED") // For now, auto-accept to simplify networking
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, receiverId])
+}
+
+model Event {
+  id                String   @id @default(uuid()) @db.Uuid
+  authorId          String   @db.Uuid
+  title             String
+  description       String
+  eventDate         DateTime
+  venue             String
+  ticketPrice       Float    @default(0)
+  capacity          Int      @default(100)
+  status            String   @default("PUBLISHED")
+  escrowBalance     Float    @default(0)
+  upfrontPayoutRate Float    @default(0)
+  createdAt         DateTime @default(now())
+
+  tickets           Ticket[]
+
+  @@index([authorId])
+}
+
+model Ticket {
+  id        String   @id @default(uuid()) @db.Uuid
+  eventId   String   @db.Uuid
+  userId    String   @db.Uuid
+  price     Float
+  status    String   @default("VALID")
+  createdAt DateTime @default(now())
+
+  event     Event    @relation(fields: [eventId], references: [id])
+}

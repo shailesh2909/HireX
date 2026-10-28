@@ -1,0 +1,176 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #0066ff 0%, #00d4ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-panel-dark {
+  background: rgba(10, 20, 50, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-professional {
+  --profile-ink: #111827;
+  --profile-muted: #4b5563;
+  --profile-line: rgba(55, 65, 81, 0.2);
+  --profile-soft: #f3f4f6;
+  --profile-brand: #0f4cc9;
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  color: var(--profile-ink);
+}
+
+.profile-professional .profile-heading {
+  font-family: 'Space Grotesk', 'Manrope', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Smooth Dark Mode Transitions */
+body {
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+body * {
+  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* Dark Mode Overrides */
+body.dark-mode {
+  background-color: #0a0b0d !important;
+  color: #f8fafc !important;
+}
+
+body.dark-mode [class*="bg-[radial-gradient"] {
+  background: radial-gradient(circle at top right, #111a30 0%, #0a0b0d 45%, #0a0b0d 100%) !important;
+}
+
+body.dark-mode .bg-white,
+body.dark-mode [class*="bg-white"],
+body.dark-mode [class*="bg-[#fafbfd]"],
+body.dark-mode [class*="bg-[#f8f9fc]"],
+body.dark-mode [class*="bg-[#f5f7fb]"],
+body.dark-mode [class*="bg-[#eef0f3]"],
+body.dark-mode [class*="bg-[#f8fafc]"],
+body.dark-mode [class*="bg-[#fafafa]"],
+body.dark-mode [class*="bg-gray-50"],
+body.dark-mode [class*="bg-slate-50"] {
+  background-color: #12141a !important;
+}
+
+/* Specific fix for Containers and Layout */
+body.dark-mode main,
+body.dark-mode article,
+body.dark-mode section,
+body.dark-mode header,
+body.dark-mode aside,
+body.dark-mode nav {
+    border-color: #1e293b !important;
+}
+
+/* Form Elements */
+body.dark-mode input, 
+body.dark-mode select, 
+body.dark-mode textarea {
+  background-color: #1a1d24 !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+body.dark-mode input:focus,
+body.dark-mode select:focus,
+body.dark-mode textarea:focus {
+    background-color: #1e293b !important;
+    border-color: #0052ff !important;
+}
+
+body.dark-mode input::placeholder {
+  color: #64748b !important;
+}
+
+/* Border Overrides */
+body.dark-mode [class*="border-[#e2e8f0]"],
+body.dark-mode [class*="border-[rgba(91,97,110,"] {
+  border-color: #1e293b !important;
+}
+
+/* Text Color Overrides */
+body.dark-mode [class*="text-[#0a0b0d]"],
+body.dark-mode [class*="text-[#2a3141]"],
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4 {
+  color: #ffffff !important;
+}
+
+body.dark-mode [class*="text-[#5b616e]"],
+body.dark-mode [class*="text-[#8a909c]"],
+body.dark-mode [class*="text-gray-500"],
+body.dark-mode [class*="text-slate-600"] {
+  color: #94a3b8 !important;
+}
+
+/* Brand Background Overrides */
+body.dark-mode [class*="bg-emerald-50"] {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+body.dark-mode [class*="bg-[#eaf0ff]"],
+body.dark-mode [class*="bg-[#0052ff]/5"],
+body.dark-mode [class*="bg-[#f3f8ff]"] {
+  background-color: rgba(0, 82, 255, 0.1) !important;
+}
+body.dark-mode [class*="bg-[#10B981]/5"] {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+/* Fix for buttons that should stay light or have specific hover */
+body.dark-mode button[class*="bg-white"]:hover {
+    background-color: #1e293b !important;
+}
+
+
+
+
+/* Skeleton Loading Animation */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f2f5 25%, #e6e8eb 50%, #f0f2f5 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 2px;
+}
+
+body.dark-mode .skeleton {
+  background: linear-gradient(90deg, #1a1d24 25%, #2a2e37 50%, #1a1d24 75%);
+  background-size: 1000px 100%;
+}
