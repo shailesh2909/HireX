@@ -1,6 +1,6 @@
-# Quantum Paradox: High-Fidelity Zero-Trust Network
+# HireX
 
-Quantum Paradox is a premium, verified professional networking and event management ecosystem. It bridges the "trust gap" in professional interactions through identity verification, cryptographic proof of attendance, and automated financial escrows. Built with a modular microservices architecture, it provides a high-scale, secure environment for professionals and businesses.
+HireX is a premium, verified professional networking and event management ecosystem. It bridges the "trust gap" in professional interactions through identity verification, cryptographic proof of attendance, and automated financial escrows. Built with a modular microservices architecture, it provides a high-scale, secure environment for professionals and businesses.
 
 ## 🌟 Key Features
 
